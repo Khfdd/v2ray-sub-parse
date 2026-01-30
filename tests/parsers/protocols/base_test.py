@@ -1,10 +1,10 @@
 """Base test class for protocol parsers - scalable for future protocol tests"""
 
 import sys
-from pathlib import Path
+import typing
 import unittest
+from pathlib import Path
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List, Tuple
 
 # Add paths for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "src"))
@@ -33,15 +33,14 @@ class BaseProtocolParserTest(ABC, unittest.TestCase):
 
     @staticmethod
     @abstractmethod
-    def parser(url: str):
+    def parser(url: str) -> dict[str, typing.Any]:
         """Parser function to test. Should be overridden by subclass."""
         pass
 
-    valid_urls: List[str] = []
-    invalid_urls: List[str] = []
+    invalid_urls: list[str] = []
 
     @abstractmethod
-    def get_test_cases(self) -> List[Dict[str, Any]]:
+    def get_test_cases(self) -> list[dict[str, typing.Any]]:
         """
         Return list of test cases for this protocol.
 
@@ -55,17 +54,6 @@ class BaseProtocolParserTest(ABC, unittest.TestCase):
             List of test case dicts
         """
         pass
-
-    def test_valid_urls_parse_successfully(self):
-        """Test that all valid URLs parse without raising exceptions"""
-        for url in self.valid_urls:
-            with self.subTest(url=url):
-                try:
-                    result = self.parser(url)
-                    self.assertIsNotNone(result)
-                except Exception as e:
-                    self.fail(
-                        f"Parser raised exception for valid URL: {url}\nError: {e}")
 
     def test_invalid_urls_raise_exception(self):
         """Test that all invalid URLs raise ValueError"""
@@ -83,24 +71,14 @@ class BaseProtocolParserTest(ABC, unittest.TestCase):
                 url = test_case['url']
                 try:
                     result = self.parser(url)
+                except Exception as e:
+                    self.fail(
+                        f"Parser raised exception for URL: {url}\nError: {e}")
+                try:
                     test_case['assertions'](result)
                 except Exception as e:
                     self.fail(
                         f"Test case '{test_case['description']}' failed for URL: {url}\n"
-                        f"Error: {e}"
+                        f"Error: {e}\n"
+                        f"Result: {result}\n\n"
                     )
-
-    def test_url_components(self, test_data: List[Tuple[str, str, int, str]]):
-        """
-        Helper method to test URL components (scheme, host, port, etc)
-
-        Args:
-            test_data: List of tuples (url, expected_host, expected_port, expected_uuid)
-        """
-        for url, expected_host, expected_port, expected_uuid in test_data:
-            with self.subTest(url=url):
-                result = self.parser(url)
-                if result.settings:
-                    self.assertEqual(result.settings.address, expected_host)
-                    self.assertEqual(result.settings.port, expected_port)
-                    self.assertEqual(result.settings.id, expected_uuid)

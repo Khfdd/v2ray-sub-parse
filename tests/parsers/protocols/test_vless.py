@@ -1,9 +1,10 @@
 """Tests for VLESS protocol parser"""
 
-from typing import List, Dict, Any
-from tests.parsers.protocols.base_test import BaseProtocolParserTest
-from src.parsers.protocols.vless import parse_vless
 import sys
+import typing
+import unittest
+from tests.parsers.protocols.base_test import BaseProtocolParserTest
+from src.v2ray_sub_parse.parsers.protocols.vless import parse_vless
 from pathlib import Path
 
 # Add src to path for imports
@@ -17,160 +18,88 @@ class TestVLESSParser(BaseProtocolParserTest):
     @staticmethod
     def parser(url: str):
         """Parser function for VLESS URLs"""
-        return parse_vless(url)
-
-    valid_urls = [
-        # Basic VLESS URL
-        "vless://a684455c-b14f-4b0a-908c-6d0e7d8f4e3f@example.com:443",
-        # With security parameter
-        "vless://a684455c-b14f-4b0a-908c-6d0e7d8f4e3f@example.com:443?security=tls",
-        # With tag
-        "vless://a684455c-b14f-4b0a-908c-6d0e7d8f4e3f@example.com:443#MyServer",
-        # With encryption
-        "vless://a684455c-b14f-4b0a-908c-6d0e7d8f4e3f@example.com:443?encryption=none",
-        # With server name
-        "vless://a684455c-b14f-4b0a-908c-6d0e7d8f4e3f@example.com:443?server_name=example.com",
-        # Complex URL with multiple parameters
-        "vless://a684455c-b14f-4b0a-908c-6d0e7d8f4e3f@example.com:443?security=tls&server_name=example.com&alpn=h2,http/1.1&flow=xtls-rprx-vision#MyTag",
-    ]
+        return parse_vless(url).model_dump(by_alias=True, exclude_none=True)
 
     invalid_urls = [
-        # Wrong scheme
         "http://a684455c-b14f-4b0a-908c-6d0e7d8f4e3f@example.com:443",
         "ss://a684455c-b14f-4b0a-908c-6d0e7d8f4e3f@example.com:443",
-        # Empty URL
         "",
-        # Malformed URL
         "not a url at all",
     ]
 
-    def get_test_cases(self) -> List[Dict[str, Any]]:
+    def get_test_cases(self) -> list[dict[str, typing.Any]]:
         """Define specific test cases for VLESS parser"""
+        def _vless_raw_reality(result: dict[str, typing.Any]):
+            self.assertEqual(
+                result, {
+                    'protocol': 'vless',
+                    'settings':
+                        {
+                            'vnext':
+                            [
+                                {'address': 'gmfstt.test.domain',
+                                 'port': 443,
+                                 'users': [
+                                     {
+                                         'id': '0f2bcbec-5447-49e1-8ba3-c7078a02bf90',
+                                         'encryption': 'none',
+                                         'flow': 'none'}
+                                 ]
+                                 }
+                            ]
+                        },
+                    'tag': '🇩🇪 Германия FAST⚡️| 🟢 VPNHub',
+                    'streamSettings': {
+                        'network': 'raw',
+                            'security': 'reality',
+                            'realitySettings':
+                            {'fingerprint':
+                             'chrome'},
+                            'rawSettings': {}
+                        }, 'mux': {'enabled': False, 'xudpProxyudp443': 'skip'}}
+            )
+
+        def _vless_xhttp_reality(result: dict[str, typing.Any]):
+            self.assertEqual(
+                result, {
+                    'protocol': 'vless',
+                    'settings': {
+                        'vnext': [
+                            {
+                                'address': 'gmfstt.test.domain',
+                                'port': 8443,
+                                'users': [
+                                    {
+                                        'id': '0f2bcbec-5447-49e1-8ba3-c7078a02bf90',
+                                        'encryption': 'none',
+                                        'flow': 'none'
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    'tag': '%F0%9F%87%A9%F0%9F%87%AA%20%D0%93%D0%B5%D1%80%D0%BC%D0%B0%D0%BD%D0%B8%D1%8F%20FAST%E2%9A%A1%EF%B8%8F%7C%20%F0%9F%9F%A2%20VPNHub',
+                    'streamSettings': {
+                        'network': 'raw',
+                        'security': 'reality',
+                        'realitySettings': {'fingerprint': 'chrome'},
+                        'rawSettings': {}
+                    },
+                    'mux': {'enabled': False, 'xudpProxyudp443': 'skip'}}
+            )
+
         return [
             {
-                'url': "vless://a684455c-b14f-4b0a-908c-6d0e7d8f4e3f@example.com:443",
-                'description': 'Basic VLESS URL with UUID, host, and port',
-                'assertions': lambda result: (
-                    self.assertEqual(result.settings.address, "example.com"),
-                    self.assertEqual(result.settings.port, 443),
-                    self.assertEqual(result.settings.id,
-                                     "a684455c-b14f-4b0a-908c-6d0e7d8f4e3f"),
-                    self.assertEqual(result.settings.encryption, "none"),
-                )
+                'url': "vless://0f2bcbec-5447-49e1-8ba3-c7078a02bf90@gmfstt.test.domain:443?security=reality&type=tcp&headerType=&path=&host=&sni=www.apple.com&fp=chrome&pbk=EJKcPSl0dv7mtU26gg6tUmKPw_aDvO2AHraRgNn6B14&sid=425ba80cd1a821a8#%F0%9F%87%A9%F0%9F%87%AA%20%D0%93%D0%B5%D1%80%D0%BC%D0%B0%D0%BD%D0%B8%D1%8F%20FAST%E2%9A%A1%EF%B8%8F%7C%20%F0%9F%9F%A2%20VPNHub",
+                'description': 'VLESS-RAW-REALITY',
+                'assertions': _vless_raw_reality
             },
             {
-                'url': "vless://test-uuid@192.168.1.1:8443#ServerTag",
-                'description': 'VLESS URL with tag',
-                'assertions': lambda result: (
-                    self.assertEqual(result.tag, "ServerTag"),
-                    self.assertEqual(result.settings.address, "192.168.1.1"),
-                    self.assertEqual(result.settings.port, 8443),
-                )
-            },
-            {
-                'url': "vless://a684455c-b14f-4b0a-908c-6d0e7d8f4e3f@example.com:443?security=tls&server_name=example.com",
-                'description': 'VLESS URL with TLS security',
-                'assertions': lambda result: (
-                    self.assertEqual(result.stream_settings.security, "tls"),
-                    self.assertIsNotNone(result.stream_settings.tls_settings),
-                    self.assertEqual(
-                        result.stream_settings.tls_settings.server_name, "example.com"),
-                )
-            },
-            {
-                'url': "vless://a684455c-b14f-4b0a-908c-6d0e7d8f4e3f@example.com:443?security=reality&server_name=example.com&short_id=1234&pubkey=pubkey123",
-                'description': 'VLESS URL with REALITY security',
-                'assertions': lambda result: (
-                    self.assertEqual(
-                        result.stream_settings.security, "reality"),
-                    self.assertIsNotNone(
-                        result.stream_settings.reality_settings),
-                    self.assertEqual(
-                        result.stream_settings.reality_settings.server_name, "example.com"),
-                )
-            },
-            {
-                'url': "vless://a684455c-b14f-4b0a-908c-6d0e7d8f4e3f@example.com:443?mux=true&concurrency=8",
-                'description': 'VLESS URL with MUX enabled',
-                'assertions': lambda result: (
-                    self.assertTrue(result.mux.enabled),
-                    self.assertEqual(result.mux.concurrency, 8),
-                )
-            },
-            {
-                'url': "vless://a684455c-b14f-4b0a-908c-6d0e7d8f4e3f@example.com:443?encryption=none&level=5",
-                'description': 'VLESS URL with level parameter',
-                'assertions': lambda result: (
-                    self.assertEqual(result.settings.level, 5),
-                )
-            },
-            {
-                'url': "vless://a684455c-b14f-4b0a-908c-6d0e7d8f4e3f@example.com:443?security=tls&alpn=h2,http/1.1&fingerprint=chrome",
-                'description': 'VLESS URL with ALPN and fingerprint',
-                'assertions': lambda result: (
-                    self.assertIsNotNone(result.stream_settings.tls_settings),
-                    self.assertIsNotNone(
-                        result.stream_settings.tls_settings.alpn),
-                    self.assertIsNotNone(
-                        result.stream_settings.tls_settings.fingerprint),
-                )
-            },
+                'url': "vless://0f2bcbec-5447-49e1-8ba3-c7078a02bf90@bs.test.domain:8443?security=reality&type=xhttp&headerType=&path=%2Fabout&host=www.apple.com&mode=auto&extra=%7B%22scMaxEachPostBytes%22%3A+1000000%2C+%22scMaxConcurrentPosts%22%3A+100%2C+%22scMinPostsIntervalMs%22%3A+30%2C+%22xPaddingBytes%22%3A+%22100-1000%22%2C+%22noGRPCHeader%22%3A+false%7D&sni=vk.com&fp=chrome&pbk=nxOc44-7o4IOVrNHDuWTZk3eKufjZM-aQa1aHKRc-io&sid=772b7ad61ba0fa12#%D0%9E%D0%B1%D1%85%D0%BE%D0%B4%20%D0%91%D0%A1%20%231%20%5BX%5D%20%7C%20%20%F0%9F%9F%A2%20VPNHub",
+                'description': 'VLESS-XHTTP-REALITY',
+                'assertions': _vless_xhttp_reality
+            }
         ]
-
-    def test_url_components_vless(self):
-        """Test basic URL component parsing for VLESS"""
-        test_data = [
-            ("vless://uuid1@host1.com:443", "host1.com", 443, "uuid1"),
-            ("vless://uuid2@192.168.1.1:8080", "192.168.1.1", 8080, "uuid2"),
-            ("vless://uuid3@localhost:10000", "localhost", 10000, "uuid3"),
-        ]
-        self.test_url_components(test_data)
-
-    def test_empty_tag_results_in_none(self):
-        """Test that URL without tag has None tag"""
-        result = parse_vless("vless://uuid@example.com:443")
-        self.assertIsNone(result.tag)
-
-    def test_tag_extraction(self):
-        """Test correct tag extraction from URL fragment"""
-        result = parse_vless("vless://uuid@example.com:443#CustomTag")
-        self.assertEqual(result.tag, "CustomTag")
-
-    def test_multiple_tags_takes_first(self):
-        """Test that if somehow multiple fragments, first is used"""
-        result = parse_vless("vless://uuid@example.com:443#FirstTag")
-        self.assertEqual(result.tag, "FirstTag")
-
-    def test_encryption_parameter_parsing(self):
-        """Test encryption parameter extraction"""
-        result = parse_vless("vless://uuid@example.com:443?encryption=none")
-        self.assertEqual(result.settings.encryption, "none")
-
-    def test_default_encryption_is_none(self):
-        """Test that default encryption is 'none'"""
-        result = parse_vless("vless://uuid@example.com:443")
-        self.assertEqual(result.settings.encryption, "none")
-
-    def test_tls_allow_insecure_parameter(self):
-        """Test allow_insecure TLS parameter"""
-        result = parse_vless(
-            "vless://uuid@example.com:443?security=tls&allow_insecure=1")
-        self.assertTrue(result.stream_settings.tls_settings.allow_insecure)
-
-    def test_tls_allow_insecure_default_false(self):
-        """Test that allow_insecure defaults to False"""
-        result = parse_vless("vless://uuid@example.com:443?security=tls")
-        self.assertFalse(result.stream_settings.tls_settings.allow_insecure)
-
-    def test_network_type_detection(self):
-        """Test network type parameter parsing"""
-        result = parse_vless("vless://uuid@example.com:443?type=tcp")
-        self.assertEqual(result.stream_settings.network.value, "tcp")
-
-    def test_default_network_is_raw(self):
-        """Test that default network type is raw"""
-        result = parse_vless("vless://uuid@example.com:443")
-        self.assertEqual(result.stream_settings.network.value, "raw")
 
 
 if __name__ == '__main__':

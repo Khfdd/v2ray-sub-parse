@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "v2ray_sub_parse"
+version = "0.0.1"
+description = "Parse V2Ray/XRay subscription links into structured Python objects"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "V2Ray Sub Parse Contributors"}
+]
+keywords = [
+    "v2ray",
+    "xray",
+    "proxy",
+    "parser",
+    "vless",
+    "vmess",
+    "trojan",
+    "subscription"
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Internet",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "pydantic>=2.0",
+    "orjson>=3.8"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "black>=23.0",
+    "isort>=5.0",
+    "mypy>=1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/v2ray-sub-parse"
+Documentation = "https://github.com/yourusername/v2ray-sub-parse#readme"
+Repository = "https://github.com/yourusername/v2ray-sub-parse.git"
+"Bug Tracker" = "https://github.com/yourusername/v2ray-sub-parse/issues"
+"XRay Core" = "https://github.com/XTLS/Xray-core"
+"V2Ray Core" = "https://github.com/v2fly/v2ray-core"
